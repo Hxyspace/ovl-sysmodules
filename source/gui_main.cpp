@@ -26,6 +26,7 @@ GuiMain::GuiMain() {
     Result rc = fsOpenSdCardFileSystem(&this->m_fs);
     if (R_FAILED(rc))
         return;
+    if (R_FAILED(rc = smInitialize())) return;
 
     FsDir contentDir;
     std::strcpy(pathBuffer, amsContentsPath);
@@ -122,22 +123,53 @@ GuiMain::GuiMain() {
 
 GuiMain::~GuiMain() {
     fsFsClose(&this->m_fs);
+    smExit();
 }
 
 tsl::elm::Element *GuiMain::createUI() {
     tsl::elm::OverlayFrame *rootFrame = new tsl::elm::OverlayFrame("Sysmodules", VERSION);
+    tsl::elm::List *sysmoduleList = new tsl::elm::List();
+        sysmoduleList->addItem(new tsl::elm::CategoryHeader("SWITCH Power Control  |  \uE0E0  Restart and Power off", true));
+        sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
+            renderer->drawString("\uE016  Quick reset or power off your console.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
+        }), 30);
+        tsl::elm::ListItem *powerResetListItem = new tsl::elm::ListItem("Reboot");
+        powerResetListItem->setValue("|  \uE0F4");
+        powerResetListItem->setClickListener([this, powerResetListItem](u64 click) -> bool {
+            if (click & HidNpadButton_A) {
+                Result rc = 0, rc1 = 0;
+                if (R_FAILED(rc = spsmInitialize()) || R_FAILED(rc1 = spsmShutdown(true)))
+                    powerResetListItem->setText("failed! code:" + std::to_string(rc) + " , " + std::to_string(rc1));
+                spsmExit();
+                return true;
+            }
+            return false;
+        });
+        sysmoduleList->addItem(powerResetListItem);
+        tsl::elm::ListItem *powerOffListItem = new tsl::elm::ListItem("Power off");
+        powerOffListItem->setValue("|  \uE098");
+        powerOffListItem->setClickListener([this, powerOffListItem](u64 click) -> bool {
+            if (click & HidNpadButton_A) {
+                Result rc = 0, rc1 = 0;
+                if (R_FAILED(rc = spsmInitialize()) || R_FAILED(rc1 = spsmShutdown(false)))
+                    powerOffListItem->setText("failed! code:" + std::to_string(rc) + " , " + std::to_string(rc1));
+                spsmExit();
+                return true;
+            }
+            return false;
+        });
+        sysmoduleList->addItem(powerOffListItem);
 
     if (this->m_sysmoduleListItems.size() == 0) {
         const char *description = this->m_scanned ? "No sysmodules found!" : "Scan failed!";
 
         auto *warning = new tsl::elm::CustomDrawer([description](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString("\uE150", false, 180, 250, 90, renderer->a(0xFFFF));
-            renderer->drawString(description, false, 110, 340, 25, renderer->a(0xFFFF));
+            renderer->drawString("\uE150", false, x + 5, y + 20, 25, renderer->a(0xFFFF));
+            renderer->drawString(description, false, x + 5, y + 20, 25, renderer->a(0xFFFF));
         });
 
-        rootFrame->setContent(warning);
+        sysmoduleList->addItem(warning);
     } else {
-        tsl::elm::List *sysmoduleList = new tsl::elm::List();
         sysmoduleList->addItem(new tsl::elm::CategoryHeader("Dynamic  |  \uE0E0  Toggle  |  \uE0E3  Toggle auto start", true));
         sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
             renderer->drawString("\uE016  These sysmodules can be toggled at any time.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
@@ -155,9 +187,9 @@ tsl::elm::Element *GuiMain::createUI() {
             if (module.needReboot)
                 sysmoduleList->addItem(module.listItem);
         }
-        rootFrame->setContent(sysmoduleList);
     }
 
+    rootFrame->setContent(sysmoduleList);
     return rootFrame;
 }
 
