@@ -129,7 +129,7 @@ GuiMain::~GuiMain() {
 tsl::elm::Element *GuiMain::createUI() {
     tsl::elm::OverlayFrame *rootFrame = new tsl::elm::OverlayFrame("Sysmodules", VERSION);
     tsl::elm::List *sysmoduleList = new tsl::elm::List();
-        sysmoduleList->addItem(new tsl::elm::CategoryHeader("SWITCH Power Control  |  \uE0E0  Restart and Power off", true));
+        sysmoduleList->addItem(new tsl::elm::CategoryHeader("SWITCH Power Control", true));
         sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
             renderer->drawString("\uE016  Quick reset or power off your console.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
         }), 30);
@@ -164,7 +164,7 @@ tsl::elm::Element *GuiMain::createUI() {
         const char *description = this->m_scanned ? "No sysmodules found!" : "Scan failed!";
 
         auto *warning = new tsl::elm::CustomDrawer([description](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString("\uE150", false, x + 5, y + 20, 25, renderer->a(0xFFFF));
+            renderer->drawString("\uE150", false, x + 25, y + 20, 25, renderer->a(0xFFFF));
             renderer->drawString(description, false, x + 5, y + 20, 25, renderer->a(0xFFFF));
         });
 
