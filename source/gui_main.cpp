@@ -129,7 +129,7 @@ GuiMain::~GuiMain() {
 tsl::elm::Element *GuiMain::createUI() {
     tsl::elm::OverlayFrame *rootFrame = new tsl::elm::OverlayFrame("Sysmodules", VERSION);
     tsl::elm::List *sysmoduleList = new tsl::elm::List();
-        sysmoduleList->addItem(new tsl::elm::CategoryHeader("SWITCH Power Control", true));
+        sysmoduleList->addItem(new tsl::elm::CategoryHeader("Power Control  |  \uE0E0  Restart and power off", true));
         sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
             renderer->drawString("\uE016  Quick reset or power off your console.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
         }), 30);
@@ -170,22 +170,36 @@ tsl::elm::Element *GuiMain::createUI() {
 
         sysmoduleList->addItem(warning);
     } else {
-        sysmoduleList->addItem(new tsl::elm::CategoryHeader("Dynamic  |  \uE0E0  Toggle  |  \uE0E3  Toggle auto start", true));
-        sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString("\uE016  These sysmodules can be toggled at any time.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
-        }), 30);
+        bool hasDynamic = false, hasStatic = false;
         for (const auto &module : this->m_sysmoduleListItems) {
-            if (!module.needReboot)
-                sysmoduleList->addItem(module.listItem);
+            if (hasDynamic && hasStatic) break;
+            if (module.needReboot) {
+                hasStatic = true;
+            } else {
+                hasDynamic = true;
+            }
         }
 
-        sysmoduleList->addItem(new tsl::elm::CategoryHeader("Static  |  \uE0E3  Toggle auto start", true));
-        sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString("\uE016  These sysmodules need a reboot to work.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
-        }), 30);
-        for (const auto &module : this->m_sysmoduleListItems) {
-            if (module.needReboot)
-                sysmoduleList->addItem(module.listItem);
+        if (hasDynamic) {
+            sysmoduleList->addItem(new tsl::elm::CategoryHeader("Dynamic  |  \uE0E0  Toggle  |  \uE0E3  Toggle auto start", true));
+            sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
+                renderer->drawString("\uE016  These sysmodules can be toggled at any time.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
+            }), 30);
+            for (const auto &module : this->m_sysmoduleListItems) {
+                if (!module.needReboot)
+                    sysmoduleList->addItem(module.listItem);
+            }
+        }
+
+        if (hasStatic) {
+            sysmoduleList->addItem(new tsl::elm::CategoryHeader("Static  |  \uE0E3  Toggle auto start", true));
+            sysmoduleList->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
+                renderer->drawString("\uE016  These sysmodules need a reboot to work.", false, x + 5, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
+            }), 30);
+            for (const auto &module : this->m_sysmoduleListItems) {
+                if (module.needReboot)
+                    sysmoduleList->addItem(module.listItem);
+            }
         }
     }
 
